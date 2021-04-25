@@ -674,7 +674,7 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q,
 		 k_timeout_t timeout)
 {
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(arch_mem_coherent(wait_q));
+	__ASSERT_NO_MSG(wait_q == NULL || arch_mem_coherent(wait_q));
 #endif
 
 	LOCKED(&sched_spinlock) {
@@ -766,12 +766,32 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	return z_swap(lock, key);
 }
 
+struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
+{
+	struct k_thread *thread = NULL;
+
+	LOCKED(&sched_spinlock) {
+		thread = _priq_wait_best(&wait_q->waitq);
+
+		if (thread != NULL) {
+			unpend_thread_no_timeout(thread);
+		}
+	}
+
+	return thread;
+}
+
 struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q)
 {
-	struct k_thread *thread = z_unpend1_no_timeout(wait_q);
+	struct k_thread *thread = NULL;
 
-	if (thread != NULL) {
-		(void)z_abort_thread_timeout(thread);
+	LOCKED(&sched_spinlock) {
+		thread = _priq_wait_best(&wait_q->waitq);
+
+		if (thread != NULL) {
+			unpend_thread_no_timeout(thread);
+			(void)z_abort_thread_timeout(thread);
+		}
 	}
 
 	return thread;
