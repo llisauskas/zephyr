@@ -1362,6 +1362,11 @@ static int uart_stm32_init(const struct device *dev)
 	/* Set the default baudrate */
 	uart_stm32_set_baudrate(dev, data->baud_rate);
 
+	/* Swap pins if needed */
+	if (config->pinswap) {
+		LL_USART_SetTXRXSwap(UartInstance, LL_USART_TXRX_SWAPPED);
+	}
+
 	LL_USART_Enable(UartInstance);
 
 #ifdef USART_ISR_TEACK
@@ -1471,6 +1476,7 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.parity = DT_INST_PROP_OR(index, parity, UART_CFG_PARITY_NONE),	\
 	.pinctrl_list = uart_pins_##index,				\
 	.pinctrl_list_size = ARRAY_SIZE(uart_pins_##index),		\
+	.pinswap = DT_INST_PROP_OR(index, pinswap, false),		\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\

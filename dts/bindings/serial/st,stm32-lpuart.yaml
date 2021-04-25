@@ -14,6 +14,10 @@ properties:
     clocks:
       required: true
 
+    pinswap:
+      required: false
+      type: boolean
+
     parity:
       required: false
       type: int
